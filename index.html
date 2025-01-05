@@ -24,35 +24,21 @@
       audio.src = "646fa044ccb4e.mp3";
       let timeOfScreenShot = "";
       let squareTarget = "";
-      let selectedCamera = prompt("دوربین عقب = 1 و دوربین جلو برابر با 0 است");
-      if (selectedCamera == 1) selectedCamera = "environment";
-      else selectedCamera = "user";
-      navigator.mediaDevices.enumerateDevices().then((devices) => {
-        const camera = devices.find(
-          (device) =>
-            (device.kind === "videoinput" &&
-              selectedCamera === "user" &&
-              device.facingMode === "user") ||
-            (selectedCamera === "environment" &&
-              device.facingMode === "environment")
-        );
-        navigator.mediaDevices
-          .getUserMedia({
-            video: {
-              width: { ideal: 640 }, // عرض ایده‌آل 640 پیکسل
-              height: { ideal: 480 }, // ارتفاع ایده‌آل 480 پیکسل
-              deviceId: { exact: camera.deviceId } 
-            },
-          })
-          .then((stream) => {
-            video.srcObject = stream;
-            video.play();
-          })
-          .catch((error) => {
-            console.log(error);
-            alert("مشکلی در دریافت مجوز دوربین رخ داده است");
-          });
-      });
+      navigator.mediaDevices
+        .getUserMedia({
+          video: {
+            width: { ideal: 640 }, // عرض ایده‌آل 640 پیکسل
+            height: { ideal: 480 }, // ارتفاع ایده‌آل 480 پیکسل
+          },
+        })
+        .then((stream) => {
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch((error) => {
+          alert("مشکلی در دریافت مجوز دوربین رخ داده است");
+        });
+
       // کپی کردن ویدیو به canvas
       function draw() {
         canvas.width = video.videoWidth;
