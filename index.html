@@ -22,13 +22,13 @@
       let pos = [];
       let audio = new Audio();
       audio.src = "646fa044ccb4e.mp3";
-
+      let timeOfScreenShot = "";
       let squareTarget = "";
       navigator.mediaDevices
         .getUserMedia({
           video: {
-            width: { ideal: 640  }, // عرض ایده‌آل 640 پیکسل
-            height: { ideal: 480  }, // ارتفاع ایده‌آل 480 پیکسل
+            width: { ideal: 640 }, // عرض ایده‌آل 640 پیکسل
+            height: { ideal: 480 }, // ارتفاع ایده‌آل 480 پیکسل
           },
         })
         .then((stream) => {
@@ -43,68 +43,121 @@
       function draw() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
+        let circleToTarget = "";
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
-        pos.forEach((item, inde) => {
-          if (!item.toX) return;
-          context.strokeStyle = "red";
-          context.strokeRect(
-            item.fromX,
-            item.fromY,
-            Math.abs(item.toX - item.fromX),
-            Math.abs(item.toY - item.fromY)
-          );
-        });
-        if (pos.length < 1) return;
-        pos.forEach((item, inde) => {
-          const imageData = context.getImageData(
-            item.fromX,
-            item.fromY,
-            Math.abs(item.toX - item.fromX),
-            Math.abs(item.toY - item.fromY)
-          );
 
-          const pixels = imageData.data; // آرایه‌ای از مقادیر RGBA
-          let index = Math.round(
-            (Math.abs(item.toX - item.fromX) / 2) * (item.toY - item.fromY)
-          );
-          if (audio.currentTime > 3) {
-            audio.pause();
-            audio.currentTime = 0;
-          }
-          if (oldPixels.length > 0 && oldPixels[inde]) {
-            if (pixels[index] - oldPixels[inde][index] > 10) {
+        if (!pos.toX) return;
+        context.strokeStyle = "red";
+
+        context.strokeRect(
+          pos.toX >= 0 ? pos.fromX : -pos.toX,
+          pos.toY >= 0 ? pos.fromY : -pos.toY,
+          Math.abs(Math.abs(pos.toX) - pos.fromX),
+          Math.abs(Math.abs(pos.toY) - pos.fromY)
+        );
+
+        if (!pos.toX) return;
+        const imageData = context.getImageData(
+          pos.toX >= 0 ? pos.fromX : -pos.toX,
+          pos.toY >= 0 ? pos.fromY : -pos.toY,
+          Math.abs(Math.abs(pos.toX) - pos.fromX),
+          Math.abs(Math.abs(pos.toY) - pos.fromY)
+        );
+
+        const pixels = imageData.data; // آرایه‌ای از مقادیر RGBA
+        let indexes = [];
+        // center center
+        indexes.push(
+          Math.abs(Math.abs(pos.toX) - pos.fromX) / 2,
+          Math.abs(Math.abs(pos.toY) - pos.fromY) / 2
+        );
+
+        // let directions = [
+        //   [0, 0],
+        //   [1, 0],
+        //   [0, 1],
+        //   [1, 1],
+        //   [0.5, 0],
+        //   [0, 0.5],
+        //   [0.5, 0.5],
+        //   [0.5, 1],
+        //   [1, 0.5],
+        // ];
+        // directions.forEach((dir) => {
+        //   indexes.push(
+        //     (Math.abs(Math.abs(pos.toX) - pos.fromX) * dir[0] === 0
+        //       ? 1
+        //       : Math.abs(Math.abs(pos.toX) - pos.fromX) * dir[0]) *
+        //       (Math.abs(Math.abs(pos.toY) - pos.fromY) * dir[1] === 0
+        //         ? 1
+        //         : Math.abs(Math.abs(pos.toY) - pos.fromY) * dir[1])
+        //   );
+        // });
+
+        if (audio.currentTime > 3) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        let width = Math.abs(Math.abs(pos.toX) - pos.fromX);
+        let height = Math.abs(Math.abs(pos.toY) - pos.fromY);
+
+        // نقاط گوشه‌ها
+        let corners = [
+          { x: 0, y: 0 }, // گوشه بالا چپ
+          { x: width - 1, y: 0 }, // گوشه بالا راست
+          { x: 0, y: height - 1 }, // گوشه پایین چپ
+          { x: width - 1, y: height - 1 }, // گوشه پایین راست
+          { x: Math.floor(width / 2), y: 0 }, // وسط بالا
+          { x: Math.floor(width / 2), y: height - 1 }, // وسط پایین
+          { x: width - 1, y: Math.floor(height / 2) }, // وسط راست
+          { x: 0, y: Math.floor(height / 2) }, // وسط چپ
+        ];
+
+        corners.forEach((corner) => {
+          let index = (corner.y * width + corner.x) * 4;
+
+          if (oldPixels.length > 0 && oldPixels) {
+            let diffRed = Math.abs(pixels[index] - oldPixels[index]);
+            let diffGreen = Math.abs(pixels[index + 1] - oldPixels[index + 1]);
+            let diffBlue = Math.abs(pixels[index + 2] - oldPixels[index + 2]);
+
+            if (diffRed > 10 || diffGreen > 10 || diffBlue > 10) {
+              console.log(index);
               audio.play();
               let url = canvas.toDataURL("image/png");
               const link = document.createElement("a");
               link.href = url;
               link.download = new Date() + ".png";
-              link.click();
+              if (Date.now() - Number(timeOfScreenShot) > 1000 * 2) {
+                link.click();
+                timeOfScreenShot = Date.now();
+              }
             }
           }
-          if (!oldPixels[inde]) oldPixels.push(pixels);
-          else oldPixels[inde] = pixels;
         });
+
+        oldPixels = pixels;
       }
       draw();
       let indexOfCurrentPos = 0;
       canvas.addEventListener("click", (e) => {
-        if (!pos[indexOfCurrentPos])
-          pos[indexOfCurrentPos] = {
+        if (!pos)
+          pos = {
             fromX: "",
             fromY: "",
             toX: "",
             toY: "",
           };
-        if (!pos[indexOfCurrentPos]["fromX"]) {
-          pos[indexOfCurrentPos]["fromX"] = e.clientX;
-          pos[indexOfCurrentPos]["fromY"] = e.clientY;
+        if (!pos["fromX"]) {
+          pos["fromX"] = e.clientX;
+          pos["fromY"] = e.clientY;
           return;
-        } else if (!pos[indexOfCurrentPos]["toX"]) {
-          pos[indexOfCurrentPos]["toX"] = e.clientX;
-          pos[indexOfCurrentPos]["toY"] = e.clientY;
+        } else if (!pos["toX"]) {
+          pos["toX"] = pos["fromX"] > e.clientX ? -e.clientX : e.clientX;
+          pos["toY"] = pos["fromY"] > e.clientY ? -e.clientY : e.clientY;
         }
+        console.log(pos);
         indexOfCurrentPos++;
         video.addEventListener("loadedmetadata", () => {
           draw();
