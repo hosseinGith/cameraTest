@@ -2,11 +2,14 @@
 <html lang="fa">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>نمایش ویدیوی دوربین</title>
   </head>
   <body>
-    <video style="display: none" id="video" autoplay playsinline></video>
+    <video
+      style="display: none; width: 100vw; height: 100vh"
+      autoplay
+      playsinline
+    ></video>
     <canvas id="canvas"></canvas>
     <script>
       const video = document.querySelector("video");
@@ -33,8 +36,8 @@
 
       // کپی کردن ویدیو به canvas
       function draw() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
 
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
@@ -44,28 +47,44 @@
           context.strokeRect(
             item.fromX,
             item.fromY,
-            item.toX - item.fromX,
-            item.toY - item.fromY
+            Math.abs(item.toX - item.fromX) > 20
+              ? 20
+              : Math.abs(item.toX - item.fromX),
+            Math.abs(item.toY - item.fromY) > 20
+              ? 20
+              : Math.abs(item.toY - item.fromY)
           );
         });
-        if (pos.length < 4) return;
+        if (pos.length < 1) return;
         pos.forEach((item, inde) => {
           const imageData = context.getImageData(
             item.fromX,
             item.fromY,
-            item.toX - item.fromX,
-            item.toY - item.fromY
+            Math.abs(item.toX - item.fromX) > 20
+              ? 20
+              : Math.abs(item.toX - item.fromX),
+            Math.abs(item.toY - item.fromY) > 20
+              ? 20
+              : Math.abs(item.toY - item.fromY)
           );
 
           const pixels = imageData.data; // آرایه‌ای از مقادیر RGBA
-          let index = Math.floor(pixels.length / 2);
+          let index = Math.round(
+            (Math.abs(item.toX - item.fromX) / 2) * (item.toY - item.fromY)
+          );
           if (audio.currentTime > 3) {
             audio.pause();
             audio.currentTime = 0;
+          
           }
-          if (oldPixels.length > 0&&oldPixels[inde]) {
-            
-            if (pixels[index] - oldPixels[inde][index] > 10) audio.play();
+          if (oldPixels.length > 0 && oldPixels[inde]) {
+            if (pixels[index] - oldPixels[inde][index] > 10){ audio.play();
+              let url = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = new Date()+".png";
+            link.click();
+            }
           }
           if (!oldPixels[inde]) oldPixels.push(pixels);
           else oldPixels[inde] = pixels;
