@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="fa">
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="UTF-8" />
-    <title>نمایش ویدیوی دوربین</title>
+    <title>دزد گیر</title>
   </head>
   <body>
     <video
@@ -15,8 +16,7 @@
       const video = document.querySelector("video");
       const canvas = document.querySelector("canvas");
       const context = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+
       // دسترسی به دوربین و نمایش در ویدیو
       let oldPixels = [];
       let pos = [];
@@ -25,7 +25,12 @@
 
       let squareTarget = "";
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({
+          video: {
+            width: { ideal: 640  }, // عرض ایده‌آل 640 پیکسل
+            height: { ideal: 480  }, // ارتفاع ایده‌آل 480 پیکسل
+          },
+        })
         .then((stream) => {
           video.srcObject = stream;
           video.play();
@@ -36,8 +41,8 @@
 
       // کپی کردن ویدیو به canvas
       function draw() {
-        canvas.width = innerWidth;
-        canvas.height = innerHeight;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
