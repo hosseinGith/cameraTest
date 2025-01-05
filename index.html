@@ -38,21 +38,26 @@
       function draw() {
         canvas.width = innerWidth;
         canvas.height = innerHeight;
-        context.clearRect(0,0,canvas.width,canvas.height)
+
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
         pos.forEach((item, inde) => {
           if (!item.toX) return;
           context.strokeStyle = "red";
-          context.strokeRect(item.fromX, item.fromY, item.toX, item.toY);
+          context.strokeRect(
+            item.fromX,
+            item.fromY,
+            Math.abs(item.toX - item.fromX),
+            Math.abs(item.toY - item.fromY)
+          );
         });
         if (pos.length < 1) return;
         pos.forEach((item, inde) => {
           const imageData = context.getImageData(
             item.fromX,
             item.fromY,
-            item.toX,
-            item.toY
+            Math.abs(item.toX - item.fromX),
+            Math.abs(item.toY - item.fromY)
           );
 
           const pixels = imageData.data; // آرایه‌ای از مقادیر RGBA
@@ -92,8 +97,8 @@
           pos[indexOfCurrentPos]["fromY"] = e.clientY;
           return;
         } else if (!pos[indexOfCurrentPos]["toX"]) {
-          pos[indexOfCurrentPos]["toX"] = 20;
-          pos[indexOfCurrentPos]["toY"] = 20;
+          pos[indexOfCurrentPos]["toX"] = e.clientX;
+          pos[indexOfCurrentPos]["toY"] = e.clientY;
         }
         indexOfCurrentPos++;
         video.addEventListener("loadedmetadata", () => {
