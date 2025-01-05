@@ -31,41 +31,28 @@
           video.play();
         })
         .catch((error) => {
-          console.error("خطا در دسترسی به دوربین:", error);
+          alert("مشکلی در دریافت مجوز دوربین رخ داده است");
         });
 
       // کپی کردن ویدیو به canvas
       function draw() {
         canvas.width = innerWidth;
         canvas.height = innerHeight;
-
+        context.clearRect(0,0,canvas.width,canvas.height)
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(draw);
         pos.forEach((item, inde) => {
           if (!item.toX) return;
           context.strokeStyle = "red";
-          context.strokeRect(
-            item.fromX,
-            item.fromY,
-            Math.abs(item.toX - item.fromX) > 20
-              ? 20
-              : Math.abs(item.toX - item.fromX),
-            Math.abs(item.toY - item.fromY) > 20
-              ? 20
-              : Math.abs(item.toY - item.fromY)
-          );
+          context.strokeRect(item.fromX, item.fromY, item.toX, item.toY);
         });
         if (pos.length < 1) return;
         pos.forEach((item, inde) => {
           const imageData = context.getImageData(
             item.fromX,
             item.fromY,
-            Math.abs(item.toX - item.fromX) > 20
-              ? 20
-              : Math.abs(item.toX - item.fromX),
-            Math.abs(item.toY - item.fromY) > 20
-              ? 20
-              : Math.abs(item.toY - item.fromY)
+            item.toX,
+            item.toY
           );
 
           const pixels = imageData.data; // آرایه‌ای از مقادیر RGBA
@@ -75,15 +62,15 @@
           if (audio.currentTime > 3) {
             audio.pause();
             audio.currentTime = 0;
-          
           }
           if (oldPixels.length > 0 && oldPixels[inde]) {
-            if (pixels[index] - oldPixels[inde][index] > 10){ audio.play();
+            if (pixels[index] - oldPixels[inde][index] > 10) {
+              audio.play();
               let url = canvas.toDataURL("image/png");
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = new Date()+".png";
-            link.click();
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = new Date() + ".png";
+              link.click();
             }
           }
           if (!oldPixels[inde]) oldPixels.push(pixels);
@@ -93,7 +80,6 @@
       draw();
       let indexOfCurrentPos = 0;
       canvas.addEventListener("click", (e) => {
-        console.log(e.clientX, e.clientY);
         if (!pos[indexOfCurrentPos])
           pos[indexOfCurrentPos] = {
             fromX: "",
@@ -106,10 +92,9 @@
           pos[indexOfCurrentPos]["fromY"] = e.clientY;
           return;
         } else if (!pos[indexOfCurrentPos]["toX"]) {
-          pos[indexOfCurrentPos]["toX"] = e.clientX;
-          pos[indexOfCurrentPos]["toY"] = e.clientY;
+          pos[indexOfCurrentPos]["toX"] = 20;
+          pos[indexOfCurrentPos]["toY"] = 20;
         }
-        console.log(pos[indexOfCurrentPos]);
         indexOfCurrentPos++;
         video.addEventListener("loadedmetadata", () => {
           draw();
