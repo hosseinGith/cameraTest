@@ -24,21 +24,35 @@
       audio.src = "646fa044ccb4e.mp3";
       let timeOfScreenShot = "";
       let squareTarget = "";
-      navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            width: { ideal: 640 }, // عرض ایده‌آل 640 پیکسل
-            height: { ideal: 480 }, // ارتفاع ایده‌آل 480 پیکسل
-          },
-        })
-        .then((stream) => {
-          video.srcObject = stream;
-          video.play();
-        })
-        .catch((error) => {
-          alert("مشکلی در دریافت مجوز دوربین رخ داده است");
-        });
-
+      let selectedCamera = prompt("دوربین عقب = 1 و دوربین جلو برابر با 0 است");
+      if (selectedCamera == 1) selectedCamera = "environment";
+      else selectedCamera = "user";
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
+        const camera = devices.find(
+          (device) =>
+            (device.kind === "videoinput" &&
+              selectedCamera === "user" &&
+              device.facingMode === "user") ||
+            (selectedCamera === "environment" &&
+              device.facingMode === "environment")
+        );
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              width: { ideal: 640 }, // عرض ایده‌آل 640 پیکسل
+              height: { ideal: 480 }, // ارتفاع ایده‌آل 480 پیکسل
+              deviceId: { exact: camera.deviceId } 
+            },
+          })
+          .then((stream) => {
+            video.srcObject = stream;
+            video.play();
+          })
+          .catch((error) => {
+            console.log(error);
+            alert("مشکلی در دریافت مجوز دوربین رخ داده است");
+          });
+      });
       // کپی کردن ویدیو به canvas
       function draw() {
         canvas.width = video.videoWidth;
@@ -114,30 +128,34 @@
           { x: 0, y: Math.floor(height / 2) }, // وسط چپ
         ];
 
-        corners.forEach((corner) => {
-          let index = (corner.y * width + corner.x) * 4;
+        if (Date.now() - Number(timeOfScreenShot) > 1000 * 2) {
+          corners.forEach((corner) => {
+            let index = (corner.y * width + corner.x) * 4;
 
-          if (oldPixels.length > 0 && oldPixels) {
-            let diffRed = Math.abs(pixels[index] - oldPixels[index]);
-            let diffGreen = Math.abs(pixels[index + 1] - oldPixels[index + 1]);
-            let diffBlue = Math.abs(pixels[index + 2] - oldPixels[index + 2]);
+            if (oldPixels.length > 0 && oldPixels) {
+              let diffRed = Math.abs(pixels[index] - oldPixels[index]);
+              let diffGreen = Math.abs(
+                pixels[index + 1] - oldPixels[index + 1]
+              );
+              let diffBlue = Math.abs(pixels[index + 2] - oldPixels[index + 2]);
 
-            if (diffRed > 10 || diffGreen > 10 || diffBlue > 10) {
-              console.log(index);
-              audio.play();
-              let url = canvas.toDataURL("image/png");
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = new Date() + ".png";
-              if (Date.now() - Number(timeOfScreenShot) > 1000 * 2) {
-                link.click();
-                timeOfScreenShot = Date.now();
+              if (diffRed > 10 || diffGreen > 10 || diffBlue > 10) {
+                if (Date.now() - Number(timeOfScreenShot) > 1000 * 2) {
+                  console.log(index);
+                  audio.play();
+                  let url = canvas.toDataURL("image/png");
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = new Date() + ".png";
+                  link.click();
+                  timeOfScreenShot = Date.now();
+                }
               }
             }
-          }
-        });
+          });
 
-        oldPixels = pixels;
+          oldPixels = pixels;
+        }
       }
       draw();
       let indexOfCurrentPos = 0;
